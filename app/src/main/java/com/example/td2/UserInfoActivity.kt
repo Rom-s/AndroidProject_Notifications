@@ -12,7 +12,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.td2.network.Api
 import kotlinx.android.synthetic.main.user_info_activity.*
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -27,6 +30,7 @@ class UserInfoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.user_info_activity)
         take_picture_button.setOnClickListener { askCameraPermissionAndOpenCamera() }
+        upload_image_button.setOnClickListener { goToMainActivity() }
     }
 
     companion object {
@@ -71,6 +75,8 @@ class UserInfoActivity : AppCompatActivity() {
         handlePhotoTaken(data)
     }
 
+    private val coroutineScope = MainScope()
+
     private fun handlePhotoTaken(data: Intent?) {
         val image = data?.extras?.get("data") as? Bitmap
         val imageBody = imageToBody(image)
@@ -80,6 +86,12 @@ class UserInfoActivity : AppCompatActivity() {
             RequestOptions.circleCropTransform()).into(user_image_view)
 
         // Plus tard : Envoie de l'avatar au serveur
+        coroutineScope.launch {
+            if (imageBody != null) {
+                Api.userService.updateAvatar(imageBody)
+            }
+        }
+
     }
 
     // Vous pouvez ignorer cette fonction...
@@ -101,5 +113,10 @@ class UserInfoActivity : AppCompatActivity() {
 
         val body = RequestBody.create(MediaType.parse("image/png"), f)
         return MultipartBody.Part.createFormData("avatar", f.path ,body)
+    }
+
+    private fun goToMainActivity(){
+        val mainActivity = Intent(this,MainActivity::class.java)
+        startActivity(mainActivity)
     }
 }

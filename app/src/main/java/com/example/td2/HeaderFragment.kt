@@ -31,12 +31,17 @@ class HeaderFragment : Fragment() {
     private val coroutineScope = MainScope()
 
     override fun onResume() {
-        coroutineScope.launch {
-            Api.userService.getInfo()
-        }
-        Glide.with(this).load("https://cdn.myanimelist.net/images/anime/1500/103005.jpg" ).apply(
-            RequestOptions.circleCropTransform()).into(image_view)
         super.onResume()
+        coroutineScope.launch {
+
+            var avatar = Api.userService.getInfo().body()?.avatar
+            Glide.with(this@HeaderFragment).load(avatar).apply(RequestOptions.circleCropTransform()).into(image_view)
+        }
+        //Glide.with(this).load("https://goo.gl/gEgYUd").into(image_view)
+
+
+
+
     }
 
     override fun onDestroy() {
