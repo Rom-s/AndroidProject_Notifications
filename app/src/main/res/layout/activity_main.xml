@@ -15,12 +15,12 @@
 <!--        app:layout_constraintRight_toRightOf="parent"-->
 <!--        app:layout_constraintTop_toTopOf="parent" />-->
 
-<!--    <fragment-->
-<!--        android:name="com.example.td2.HeaderFragment"-->
-<!--        android:id="@+id/header_fragment"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        tools:ignore="MissingConstraints" />-->
+    <fragment
+        android:name="com.example.td2.HeaderFragment"
+        android:id="@+id/header_fragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:ignore="MissingConstraints" />
 
     <fragment
         android:name="com.example.td2.TasksFragment"
