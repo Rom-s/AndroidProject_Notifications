@@ -19,4 +19,11 @@
         android:layout_height="wrap_content"
         android:text="Prendre une photo" />
 
+    <ImageView
+        android:id="@+id/user_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    </ImageView>
+
 </LinearLayout>
