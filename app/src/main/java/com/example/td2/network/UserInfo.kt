@@ -6,9 +6,9 @@ data class UserInfo(
     @Json(name = "email")
     val email: String,
     @Json(name = "firstname")
-    val firstName: String,
+    val firstname: String,
     @Json(name = "lastname")
-    val lastName: String,
+    val lastname: String,
     @Json(name = "avatar")
     val avatar: String?
 )

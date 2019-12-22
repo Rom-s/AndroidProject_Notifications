@@ -88,7 +88,7 @@ class UserInfoActivity : AppCompatActivity() {
         // Plus tard : Envoie de l'avatar au serveur
         coroutineScope.launch {
             if (imageBody != null) {
-                Api.userService.updateAvatar(imageBody)
+                Api.INSTANCE.userService.updateAvatar(imageBody)
             }
         }
 

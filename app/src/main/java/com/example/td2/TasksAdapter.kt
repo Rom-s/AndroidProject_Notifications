@@ -26,7 +26,7 @@ class TasksAdapter(private val tasks: MutableList<Task>) : RecyclerView.Adapter<
 
     private fun onDeleteClickListener(task : Task) {
         coroutineScope.launch {
-            Api.tasksService.deleteTask(task.id)
+            Api.INSTANCE.tasksService.deleteTask(task.id)
         }
         tasks.remove(task)
         notifyDataSetChanged()

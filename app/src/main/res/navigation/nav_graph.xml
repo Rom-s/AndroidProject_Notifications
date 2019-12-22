@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/authentication_fragment">
+
+    <fragment
+        android:id="@+id/authentication_fragment"
+        android:name="com.example.td2.AuthenticationFragment" >
+        <action
+            android:id="@+id/action_authentication_fragment_to_login_fragment"
+            app:destination="@id/login_fragment" />
+        <action
+            android:id="@+id/action_authentication_fragment_to_signup_fragment"
+            app:destination="@id/signup_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/login_fragment"
+        android:name="com.example.td2.LoginFragment" />
+
+    <fragment
+        android:id="@+id/signup_fragment"
+        android:name="com.example.td2.SignupFragment" />
+</navigation>
