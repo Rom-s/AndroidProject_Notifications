@@ -37,16 +37,9 @@ class HeaderFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         coroutineScope.launch {
-
-            try {
-                val info = Api.INSTANCE.userService.getInfo().body()
-                view?.text?.text = "Hello "+info?.firstname
-                Glide.with(this@HeaderFragment).load(info?.avatar).placeholder(R.drawable.ic_launcher_background).apply(RequestOptions.circleCropTransform()).into(image_view)
-            }
-            catch (e : Exception) {
-                Glide.with(this@HeaderFragment).load("https://goo.gl/gEgYUd").into(image_view)
-            }
-
+            val info = Api.INSTANCE.userService.getInfo().body()
+            view?.text?.text = info?.firstname
+            Glide.with(this@HeaderFragment).load(info?.avatar).placeholder(R.drawable.ic_account_circle_black_40dp).apply(RequestOptions.circleCropTransform()).into(image_view)
         }
         //Glide.with(this).load("https://goo.gl/gEgYUd").into(image_view)
 
