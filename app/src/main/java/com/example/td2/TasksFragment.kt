@@ -83,6 +83,7 @@ class TasksFragment : Fragment() {
         val myFormat = "MM/dd/yyyy-HH:mm"//format de la date et de l'heure. L'heure est fixée dans le dialogue de l'heure.
         val sdf = SimpleDateFormat(myFormat, Locale.US)
         cal.setTime(sdf.parse(task.description.lines()[0])!!)
+        cal.add(Calendar.MINUTE,-5)
         cal.set(Calendar.SECOND,0)
         val alarmManager = activity?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, Receiver::class.java)
@@ -91,9 +92,9 @@ class TasksFragment : Fragment() {
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         Log.d("MainActivity", " Create : " + Date().toString() + "cal date :" + sdf.format(cal.getTime()))
         //la ligne ci-dessous envoie une alamre (execute la fonction receive) à la date de cal
-        //alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
         //envoie une alarme 10 secondes après l'appel de setAlarmManager
-        alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 10000, pendingIntent)
+        //alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 10000, pendingIntent)
     }
 
     fun createTask(title: String, description: String) {
@@ -135,29 +136,34 @@ class TasksFragment : Fragment() {
 
         val buttonCreate = dialog.findViewById(R.id.button_ok) as Button
 
-        //crée le dialogue demandant la date. C'est dedans que je crée la tache, étant donné que c'est le ernier dialogue à s'afficher
-        val dpd = DatePickerDialog(context!!, DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
+        //Crée le dialogue de l'heure, c'est lui qui va lancer le dialogue de la date.
+        val timeSetListener = TimePickerDialog.OnTimeSetListener { timePicker, hour, minute ->
             val editTitle = dialog.findViewById(R.id.task_title) as EditText
             val editDescription = dialog.findViewById(R.id.task_description) as EditText
-            cal.set(Calendar.YEAR, year)
-            cal.set(Calendar.MONTH, monthOfYear)
-            cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            cal.set(Calendar.HOUR_OF_DAY, hour)
+            cal.set(Calendar.MINUTE, minute)
             val myFormat = "MM/dd/yyyy-HH:mm"//format de la date et de l'heure. L'heure est fixée dans le dialogue de l'heure.
             val sdf = SimpleDateFormat(myFormat, Locale.US)
             createTask(editTitle.text.toString(), sdf.format(cal.getTime()) + "\n" + editDescription.text.toString())
+
+        }
+
+        //crée le dialogue demandant la date. C'est dedans que je crée la tache, étant donné que c'est le ernier dialogue à s'afficher
+        val dpd = DatePickerDialog(context!!, DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
+
+            cal.set(Calendar.YEAR, year)
+            cal.set(Calendar.MONTH, monthOfYear)
+            cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            TimePickerDialog(context!!, timeSetListener, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
         }, year, month, day)
 
-        //Crée le dialogue de l'heure, c'est lui qui va lancer le dialogue de la date.
-        val timeSetListener = TimePickerDialog.OnTimeSetListener { timePicker, hour, minute ->
-            cal.set(Calendar.HOUR_OF_DAY, hour)
-            cal.set(Calendar.MINUTE, minute)
-            dpd.show()
-        }
+
 
         //lance le dialogue de l'heure à la fin du dialogue de la tache.
         buttonCreate.setOnClickListener {
             dialog.dismiss()
-            TimePickerDialog(context!!, timeSetListener, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+            dpd.show()
+
 
         }
 
