@@ -62,6 +62,9 @@ class TasksFragment : Fragment() {
             if (it != null) {
                 tasks.clear()
                 tasks.addAll(it)
+                for (t in it) {
+                    setAlarmManager(t)
+                }
                 adapter.notifyDataSetChanged()
             }
         })
@@ -69,9 +72,7 @@ class TasksFragment : Fragment() {
 
     private val coroutineScope = MainScope()
 
-
-
-    fun setAlarmManager(date : String){
+    fun setAlarmManager(task : Task){
         var cal = Calendar.getInstance()
         /*cal.set(Calendar.YEAR, 2020)
         cal.set(Calendar.MONTH, 0)
@@ -81,10 +82,12 @@ class TasksFragment : Fragment() {
         cal.set(Calendar.SECOND,0)*/
         val myFormat = "MM/dd/yyyy-HH:mm"//format de la date et de l'heure. L'heure est fixée dans le dialogue de l'heure.
         val sdf = SimpleDateFormat(myFormat, Locale.US)
-        cal.setTime(sdf.parse(date))
+        cal.setTime(sdf.parse(task.description.lines()[0])!!)
         cal.set(Calendar.SECOND,0)
         val alarmManager = activity?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, Receiver::class.java)
+        intent.putExtra("text", task.title)
+        intent.putExtra("id", task.id)
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         Log.d("MainActivity", " Create : " + Date().toString() + "cal date :" + sdf.format(cal.getTime()))
         //la ligne ci-dessous envoie une alamre (execute la fonction receive) à la date de cal
@@ -103,10 +106,23 @@ class TasksFragment : Fragment() {
             }
             else {
                 tasks.add(fetchedTask.body()!!)
+                setAlarmManager(task)
                 adapter.notifyDataSetChanged()
             }
         }
     }
+
+    fun removeTask(id : String) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            tasks.removeIf { t -> t.id == id }
+        }
+        else {
+            val task = tasks.find { t -> t.id == id }
+            tasks.remove(task)
+        }
+    }
+
 
     fun createDialog() {
         var cal = Calendar.getInstance()
@@ -129,7 +145,6 @@ class TasksFragment : Fragment() {
             val myFormat = "MM/dd/yyyy-HH:mm"//format de la date et de l'heure. L'heure est fixée dans le dialogue de l'heure.
             val sdf = SimpleDateFormat(myFormat, Locale.US)
             createTask(editTitle.text.toString(), sdf.format(cal.getTime()) + "\n" + editDescription.text.toString())
-            setAlarmManager(sdf.format(cal.getTime()))
         }, year, month, day)
 
         //Crée le dialogue de l'heure, c'est lui qui va lancer le dialogue de la date.
@@ -153,40 +168,76 @@ class TasksFragment : Fragment() {
     }
 
     class Receiver : BroadcastReceiver() {
-        /*test de notification qui marche pas
-        fun createNotificationChannel(context: Context, importance: Int, showBadge: Boolean, name: String, description: String) {
+        //test de notification qui marche
+        fun createNotificationChannel(context: Context, channelId : String,  name: String, descriptionText: String) {
             // 1
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val importance = NotificationManager.IMPORTANCE_DEFAULT
+                val channel = NotificationChannel(channelId, name, importance).apply {
+                    description = descriptionText
+                }
 
-                // 2
-                val channelId = "${context.packageName}-$name"
-                val channel = NotificationChannel(channelId, name, importance)
-                channel.description = description
-                channel.setShowBadge(showBadge)
-
-                // 3
                 val notificationManager = context.getSystemService(NotificationManager::class.java)
-                notificationManager.createNotificationChannel(channel)
+                notificationManager?.createNotificationChannel(channel)
             }
-        }*/
+        }
         //fonction qui est déclenchée par l'alarme, c'est ce qui va être lacé 5 minutes avant l'échéance de la tache
         override fun onReceive(context: Context?, intent: Intent?) {
             Log.d("MainActivity", " Receiver : " + Date().toString())
-            /* test de création de notification qui ne marche pas
-            createNotificationChannel(context!!,
-                NotificationManagerCompat.IMPORTANCE_DEFAULT, false,
-                "test", "App notification channel.")
-            val channelId = "${context?.packageName}-${context?.getString(R.string.app_name)}"
-            var builder = NotificationCompat.Builder(context!!, channelId)
-                .setSmallIcon(R.drawable.roundedrectangle)
-                .setContentTitle("TestNotif")
-                .setContentText("ca va marcher")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-            // 1
-            val notificationManager = NotificationManagerCompat.from(context)
-            // 2
-            notificationManager.notify(1001, builder.build())*/
+            val channelId = "task_channel"
+            val notifId = intent.hashCode()
+
+            val returnIntent = Intent(context, MainActivity::class.java)
+            returnIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, returnIntent, 0)
+
+
+            // "Mark as done" action
+            val buttonIntent = Intent(context, ActionReceiver::class.java).apply {
+                action = "Mark the task as done."
+            }
+            buttonIntent.putExtra("taskId", intent?.getStringExtra("id"))
+            buttonIntent.putExtra("notifId", notifId)
+            val buttonPendingIntent : PendingIntent = PendingIntent.getBroadcast(context, 0, buttonIntent, 0)
+            val action: NotificationCompat.Action = NotificationCompat.Action.Builder(R.drawable.ic_check_black_24dp,"MARK AS DONE", buttonPendingIntent).build()
+
+            createNotificationChannel(context!!, channelId, "Task Channel","Task Channel")
+
+            val mBuilder = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.drawable.ic_notifications_black_24dp)
+                .setContentTitle("The due date of a task is approaching.")
+                .setContentText(intent?.getStringExtra("text"))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .addAction(action)
+                .setAutoCancel(true)
+                .build()
+
+            with(NotificationManagerCompat.from(context)) {
+                notify(notifId, mBuilder)
+            }
+        }
+    }
+
+    inner class ActionReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d("MainActivity", "toto")
+            val id = intent?.getStringExtra("taskId")!!
+            Log.d("MainActivity", "Remove Receiver : $id")
+            coroutineScope.launch {
+                Api.INSTANCE.tasksService.deleteTask(id)
+            }
+            removeTask(id)
+            adapter.notifyDataSetChanged()
+
+            with(NotificationManagerCompat.from(context!!)) {
+                cancel(intent.getIntExtra("notifId", 0))
+            }
+
+            val mainActivity = Intent(activity, MainActivity::class.java)
+            mainActivity.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(mainActivity)
         }
     }
 }
